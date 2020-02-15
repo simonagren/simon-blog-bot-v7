@@ -1,9 +1,9 @@
-# simon-blog-bot-v3
+# simon-blog-bot-v4
 
 Develop a Bot step by step, introducing more concepts as we go
 
-This is the Bot that is used in the Dialog Blog post #4.
-[URL](https://simonagren.github.io/bot-framework-series-4)
+This is the Bot that is used in the Adaptive card Blog post #6.
+[URL](https://simonagren.github.io/bot-framework-series-6)
 
 
 ## Prerequisites
