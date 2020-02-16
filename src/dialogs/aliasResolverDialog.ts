@@ -15,20 +15,16 @@ const TEXT_PROMPT = 'textPrompt';
 const WATERFALL_DIALOG = 'waterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
 
-export class OwnerResolverDialog extends ComponentDialog {
+export class AliasResolverDialog extends ComponentDialog {
   private static tokenResponse: any;
   
-  private static async ownerPromptValidator(promptContext: PromptValidatorContext<string>): Promise<boolean> {
+  private static async aliasPromptValidator(promptContext: PromptValidatorContext<string>): Promise<boolean> {
     if (promptContext.recognized.succeeded) {
       
-      const owner: string = promptContext.recognized.value;
-      if (!OwnerResolverDialog.validateEmail(owner)) {
-        promptContext.context.sendActivity('Malformatted email adress.');
-        return false;
-      }
+      const alias: string = promptContext.recognized.value;
       
-      if (!await GraphHelper.userExists(owner, OwnerResolverDialog.tokenResponse))  {
-        promptContext.context.sendActivity('User doesn\'t exist.');
+      if (await GraphHelper.aliasExistsPnP(alias, AliasResolverDialog.tokenResponse))  {
+        promptContext.context.sendActivity('Alias already exist.');
         return false;
       }
 
@@ -39,16 +35,11 @@ export class OwnerResolverDialog extends ComponentDialog {
     }
   }
 
-  private static validateEmail(email: string): boolean {
-    const re = /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))){2,6}$/i;
-    return re.test(email);
-  }
-
   constructor(id: string) {
     super(id || 'ownerResolverDialog');
     
     this
-        .addDialog(new TextPrompt(TEXT_PROMPT, OwnerResolverDialog.ownerPromptValidator.bind(this)))
+        .addDialog(new TextPrompt(TEXT_PROMPT, AliasResolverDialog.aliasPromptValidator.bind(this)))
         .addDialog(new OAuthPrompt(OAUTH_PROMPT, {
           connectionName: process.env.connectionName,
           text: 'Please Sign In',
@@ -76,23 +67,23 @@ export class OwnerResolverDialog extends ComponentDialog {
     const tokenResponse = stepContext.result;
     if (tokenResponse && tokenResponse.token) {
       
-      OwnerResolverDialog.tokenResponse = tokenResponse;
+      AliasResolverDialog.tokenResponse = tokenResponse;
 
       const siteDetails = (stepContext.options as any).siteDetails;
-      const promptMsg = `Provide an owner email for your ${siteDetails.siteType} site`;
+      const promptMsg = `Provide an alias for your ${siteDetails.siteType} site`;
 
-      if (!siteDetails.owner) {
+      if (!siteDetails.alias) {
 
-        const ownerCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
+        const aliasCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
           JSON.stringify(GenericCard).replace('$Placeholder', promptMsg)));
   
-        await stepContext.context.sendActivity({ attachments: [ownerCard] });
+        await stepContext.context.sendActivity({ attachments: [aliasCard] });
         return await stepContext.prompt(TEXT_PROMPT,
           {
               prompt: ''
           });
       } else {
-        return await stepContext.next(siteDetails.owner);
+        return await stepContext.next(siteDetails.alias);
       }
     }
     await stepContext.context.sendActivity('Login was not successful please try again.');

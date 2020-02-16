@@ -1,33 +1,35 @@
+import { Attachment, AttachmentLayoutTypes, CardFactory } from 'botbuilder';
+
 import {
-    ChoiceFactory,
-    ChoicePrompt,
     ComponentDialog,
     ConfirmPrompt,
     DialogTurnResult,
-    PromptValidatorContext,
     TextPrompt,
     WaterfallDialog,
     WaterfallStepContext
 } from 'botbuilder-dialogs';
 
+import { AliasResolverDialog } from './aliasResolverDialog';
 import { OwnerResolverDialog } from './ownerResolverDialog';
 import { SiteDetails } from './siteDetails';
 
 const TEXT_PROMPT = 'textPrompt';
-const CHOICE_PROMPT = 'choicePrompt';
-const TITLE_PROMPT = 'titlePrompt';
 const OWNER_RESOLVER_DIALOG = 'ownerResolverDialog';
+const ALIAS_RESOLVER_DIALOG = 'aliasResolverDialog';
 const CONFIRM_PROMPT = 'confirmPrompt';
 const WATERFALL_DIALOG = 'waterfallDialog';
+
+import GenericCard from '../resources/generic.json';
+import SiteTypesCard from '../resources/siteTypes.json';
+import SummaryCard from '../resources/summary.json';
 
 export class SiteDialog extends ComponentDialog {
     constructor(id: string) {
         super(id || 'siteDialog');
         this
-            .addDialog(new ChoicePrompt(CHOICE_PROMPT))
-            .addDialog(new TextPrompt(TITLE_PROMPT, this.titlePromptValidator))
             .addDialog(new TextPrompt(TEXT_PROMPT))
             .addDialog(new OwnerResolverDialog(OWNER_RESOLVER_DIALOG))
+            .addDialog(new AliasResolverDialog(ALIAS_RESOLVER_DIALOG))
             .addDialog(new ConfirmPrompt(CONFIRM_PROMPT))
             .addDialog(new WaterfallDialog(WATERFALL_DIALOG, [
                 this.siteTypeStep.bind(this),
@@ -42,13 +44,6 @@ export class SiteDialog extends ComponentDialog {
     }    
 
     /**
-     * validator for text lenght
-     */
-    private async titlePromptValidator(promptContext: PromptValidatorContext<string>): Promise<boolean> {
-        return promptContext.recognized.succeeded && promptContext.recognized.value.length > 0 && promptContext.recognized.value.length < 20;
-    }
-
-    /**
      * If a site type has not been provided, prompt for one.
      */
     private async siteTypeStep(stepContext: WaterfallStepContext): Promise<DialogTurnResult> {
@@ -56,10 +51,13 @@ export class SiteDialog extends ComponentDialog {
 
         if (!siteDetails.siteType) {
 
-            return await stepContext.prompt(CHOICE_PROMPT, {
-                choices: ChoiceFactory.toChoices(['Team Site', 'Communication Site']),
-                prompt: 'Select site type.'
+            const siteTypeCards: Attachment[] = SiteTypesCard.cards.map((card: any) => CardFactory.adaptiveCard(card));
+            await stepContext.context.sendActivity({ 
+                attachmentLayout: AttachmentLayoutTypes.Carousel, 
+                attachments: siteTypeCards 
             });
+
+            return await stepContext.prompt(TEXT_PROMPT, '');
 
         } else {
             return await stepContext.next(siteDetails.siteType);
@@ -76,9 +74,12 @@ export class SiteDialog extends ComponentDialog {
 
         if (!siteDetails.title) {
 
-            const promptText = 'Provide a title for your site';
-            const retryPromptText = 'The site title must contain at least one letter and be less than 20';
-            return await stepContext.prompt(TITLE_PROMPT, { prompt: promptText, retryPrompt: retryPromptText });
+            const promptText = `Provide a title for your ${siteDetails.siteType} site`;
+            const titleCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
+                JSON.stringify(GenericCard).replace('$Placeholder', promptText)));
+            
+            await stepContext.context.sendActivity({ attachments: [titleCard] });
+            return await stepContext.prompt(TEXT_PROMPT, '');
         } else {
             return await stepContext.next(siteDetails.title);
         }
@@ -93,8 +94,12 @@ export class SiteDialog extends ComponentDialog {
         // Capture the results of the previous step
         siteDetails.title = stepContext.result;
         if (!siteDetails.description) {
-            const text = 'Provide a description for your site';
-            return await stepContext.prompt(TEXT_PROMPT, { prompt: text });    
+            const promptText = `Provide a description for your ${siteDetails.siteType} site`;
+            const descCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
+                JSON.stringify(GenericCard).replace('$Placeholder', promptText)));
+
+            await stepContext.context.sendActivity({ attachments: [descCard] });
+            return await stepContext.prompt('textPrompt', '');    
         } else {
             return await stepContext.next(siteDetails.description);
         }
@@ -126,7 +131,7 @@ export class SiteDialog extends ComponentDialog {
         siteDetails.owner = stepContext.result;
         
         // Don't ask for alias if a communication site
-        if (siteDetails.siteType === 'Communication Site') {
+        if (siteDetails.siteType === 'Communication') {
             
             return await stepContext.next();
         
@@ -134,8 +139,8 @@ export class SiteDialog extends ComponentDialog {
         } else {
             
             if (!siteDetails.alias) {
-                const text = 'Provide an alias for your site';
-                return await stepContext.prompt(TEXT_PROMPT, { prompt: text });
+                
+                return await stepContext.beginDialog(ALIAS_RESOLVER_DIALOG, { siteDetails });   
             } else {
                 return await stepContext.next(siteDetails.alias);
             }
@@ -151,16 +156,19 @@ export class SiteDialog extends ComponentDialog {
         // Capture the results of the previous step
         siteDetails.alias = stepContext.result;
         
-        const msg = `A summary of your request:\n 
-        Title: ${ siteDetails.title} \n\n
-        Owner: ${ siteDetails.owner} \n\n
-        Description: ${ siteDetails.description} \n\n
-        Site type: ${ siteDetails.siteType} \n\n
-        Alias: ${ siteDetails.alias}, \n\n
-        Is this correct?`;
+        const summaryCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
+            JSON.stringify(SummaryCard)
+                .replace('$Title', siteDetails.title)
+                .replace('$Desc', siteDetails.description)
+                .replace('$Owner', siteDetails.owner)
+                .replace('$Type', siteDetails.siteType)
+                .replace('$Alias', siteDetails.alias ? siteDetails.alias : '' )
+                ));
+
+        await stepContext.context.sendActivity({ attachments: [summaryCard] });
 
         // Offer a YES/NO prompt.
-        return await stepContext.prompt(CONFIRM_PROMPT, { prompt: msg });
+        return await stepContext.prompt(CONFIRM_PROMPT, { prompt: '' });
     }
 
     /**

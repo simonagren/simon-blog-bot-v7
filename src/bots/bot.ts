@@ -1,5 +1,6 @@
 import {
   BotState,
+  CardFactory,
   ConversationState,
   SigninStateVerificationQuery,
   StatePropertyAccessor,
@@ -9,6 +10,7 @@ import {
 } from 'botbuilder';
 import { Dialog, DialogState } from 'botbuilder-dialogs';
 import { MainDialog } from '../dialogs/mainDialog';
+import WelcomeCard from '../resources/welcome.json';
 
 export class SimonBot extends TeamsActivityHandler {
   private conversationState: BotState;
@@ -43,6 +45,11 @@ export class SimonBot extends TeamsActivityHandler {
 
     this.onMessage(async (context, next) => {
       
+      // If result comes from an Adaptive Card
+      if (context.activity.text === undefined && context.activity.value ) {
+        context.activity.text = JSON.stringify(context.activity.value);
+      }
+
       // Run the Dialog with the new message Activity.
       await (this.dialog as MainDialog).run(context, this.dialogState);
 
@@ -61,10 +68,10 @@ export class SimonBot extends TeamsActivityHandler {
 
     this.onMembersAdded(async (context, next) => {
       const membersAdded = context.activity.membersAdded;
+      const welcomeCard = CardFactory.adaptiveCard(WelcomeCard);
       for (const member of membersAdded) {
         if (member.id !== context.activity.recipient.id) {
-          const welcome = `Welcome to Simon Bot ${ member.name }. This Bot is a work in progress. At this time we have some dialogs working. Type anything to get started.`;
-          await context.sendActivity(welcome);
+          await context.sendActivity({ attachments: [welcomeCard] });
         }
       }
       // By calling next() you ensure that the next BotHandler is run.
@@ -82,6 +89,17 @@ export class SimonBot extends TeamsActivityHandler {
   });
   }
   
+  /**
+   * Override the ActivityHandler.run() method to save state changes after the bot logic completes.
+   */
+  public async run(context): Promise<void> {
+    await super.run(context);
+
+    // Save any state changes. The load happened during the execution of the Dialog.
+    await this.conversationState.saveChanges(context, false);
+    await this.userState.saveChanges(context, false);
+  }
+
   protected async handleTeamsSigninVerifyState(context: TurnContext, query: SigninStateVerificationQuery): Promise<void> {
     await (this.dialog as MainDialog).run(context, this.dialogState);
   }
