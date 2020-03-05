@@ -1,6 +1,5 @@
 import { Attachment, CardFactory } from 'botbuilder';
 import {
-  ComponentDialog,
   DialogTurnResult,
   OAuthPrompt,
   PromptValidatorContext,
@@ -10,12 +9,13 @@ import {
 } from 'botbuilder-dialogs';
 import { GraphHelper } from '../helpers/graphHelper';
 import GenericCard from '../resources/generic.json';
+import { HelperDialog } from './helperDialog';
 
 const TEXT_PROMPT = 'textPrompt';
 const WATERFALL_DIALOG = 'waterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
 
-export class OwnerResolverDialog extends ComponentDialog {
+export class OwnerResolverDialog extends HelperDialog {
   private static tokenResponse: any;
   
   private static async ownerPromptValidator(promptContext: PromptValidatorContext<string>): Promise<boolean> {
@@ -23,12 +23,20 @@ export class OwnerResolverDialog extends ComponentDialog {
       
       const owner: string = promptContext.recognized.value;
       if (!OwnerResolverDialog.validateEmail(owner)) {
-        promptContext.context.sendActivity('Malformatted email adress.');
+        const badEmailText = 'Malformatted email adress';
+        const badEmailCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
+          JSON.stringify(GenericCard).replace('$Placeholder', badEmailText)));
+    
+        await promptContext.context.sendActivity({ attachments: [badEmailCard] });    
         return false;
       }
       
-      if (!await GraphHelper.userExists(owner, OwnerResolverDialog.tokenResponse))  {
-        promptContext.context.sendActivity('User doesn\'t exist.');
+      if (!await GraphHelper.userExists(OwnerResolverDialog.tokenResponse, owner))  {
+        const notExistText = 'User doesn\'t exist.';
+        const notExistCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
+          JSON.stringify(GenericCard).replace('$Placeholder', notExistText)));
+
+        await promptContext.context.sendActivity({ attachments: [notExistCard] });    
         return false;
       }
 
@@ -45,7 +53,7 @@ export class OwnerResolverDialog extends ComponentDialog {
   }
 
   constructor(id: string) {
-    super(id || 'ownerResolverDialog');
+    super(id || 'ownerResolverDialog', process.env.connectionName);
     
     this
         .addDialog(new TextPrompt(TEXT_PROMPT, OwnerResolverDialog.ownerPromptValidator.bind(this)))
@@ -80,16 +88,14 @@ export class OwnerResolverDialog extends ComponentDialog {
 
       const siteDetails = (stepContext.options as any).siteDetails;
       const promptMsg = `Provide an owner email for your ${siteDetails.siteType} site`;
-
       if (!siteDetails.owner) {
 
         const ownerCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
           JSON.stringify(GenericCard).replace('$Placeholder', promptMsg)));
   
-        await stepContext.context.sendActivity({ attachments: [ownerCard] });
         return await stepContext.prompt(TEXT_PROMPT,
           {
-              prompt: ''
+              prompt: { attachments: [ownerCard] }
           });
       } else {
         return await stepContext.next(siteDetails.owner);

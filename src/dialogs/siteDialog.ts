@@ -1,7 +1,6 @@
 import { Attachment, AttachmentLayoutTypes, CardFactory } from 'botbuilder';
 
 import {
-    ComponentDialog,
     ConfirmPrompt,
     DialogTurnResult,
     TextPrompt,
@@ -22,10 +21,11 @@ const WATERFALL_DIALOG = 'waterfallDialog';
 import GenericCard from '../resources/generic.json';
 import SiteTypesCard from '../resources/siteTypes.json';
 import SummaryCard from '../resources/summary.json';
+import { HelperDialog } from './helperDialog';
 
-export class SiteDialog extends ComponentDialog {
+export class SiteDialog extends HelperDialog {
     constructor(id: string) {
-        super(id || 'siteDialog');
+        super(id || 'siteDialog', process.env.connectionName);
         this
             .addDialog(new TextPrompt(TEXT_PROMPT))
             .addDialog(new OwnerResolverDialog(OWNER_RESOLVER_DIALOG))
@@ -52,13 +52,11 @@ export class SiteDialog extends ComponentDialog {
         if (!siteDetails.siteType) {
 
             const siteTypeCards: Attachment[] = SiteTypesCard.cards.map((card: any) => CardFactory.adaptiveCard(card));
-            await stepContext.context.sendActivity({ 
-                attachmentLayout: AttachmentLayoutTypes.Carousel, 
-                attachments: siteTypeCards 
-            });
-
-            return await stepContext.prompt(TEXT_PROMPT, '');
-
+            
+            return await stepContext.prompt(TEXT_PROMPT, {prompt: { 
+                attachmentLayout: AttachmentLayoutTypes.Carousel,
+                attachments: siteTypeCards
+            }});
         } else {
             return await stepContext.next(siteDetails.siteType);
         }
@@ -70,16 +68,14 @@ export class SiteDialog extends ComponentDialog {
     private async titleStep(stepContext: WaterfallStepContext): Promise<DialogTurnResult> {
         const siteDetails = stepContext.options as SiteDetails;
 
-        siteDetails.siteType = stepContext.result.value;
+        siteDetails.siteType = JSON.parse(stepContext.result).siteType;
 
         if (!siteDetails.title) {
-
             const promptText = `Provide a title for your ${siteDetails.siteType} site`;
             const titleCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
                 JSON.stringify(GenericCard).replace('$Placeholder', promptText)));
-            
-            await stepContext.context.sendActivity({ attachments: [titleCard] });
-            return await stepContext.prompt(TEXT_PROMPT, '');
+
+            return await stepContext.prompt(TEXT_PROMPT, { prompt: { attachments: [titleCard] }});    
         } else {
             return await stepContext.next(siteDetails.title);
         }
@@ -98,8 +94,7 @@ export class SiteDialog extends ComponentDialog {
             const descCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
                 JSON.stringify(GenericCard).replace('$Placeholder', promptText)));
 
-            await stepContext.context.sendActivity({ attachments: [descCard] });
-            return await stepContext.prompt('textPrompt', '');    
+            return await stepContext.prompt(TEXT_PROMPT, { prompt: { attachments: [descCard] }});    
         } else {
             return await stepContext.next(siteDetails.description);
         }
@@ -165,10 +160,8 @@ export class SiteDialog extends ComponentDialog {
                 .replace('$Alias', siteDetails.alias ? siteDetails.alias : '' )
                 ));
 
-        await stepContext.context.sendActivity({ attachments: [summaryCard] });
-
         // Offer a YES/NO prompt.
-        return await stepContext.prompt(CONFIRM_PROMPT, { prompt: '' });
+        return await stepContext.prompt(CONFIRM_PROMPT, { prompt: { attachments: [summaryCard] } });
     }
 
     /**

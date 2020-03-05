@@ -1,7 +1,12 @@
 import {
+  Activity,
+  ActivityTypes,
+  Attachment,
   BotState,
   CardFactory,
+  ChannelAccount,
   ConversationState,
+  Mention,
   SigninStateVerificationQuery,
   StatePropertyAccessor,
   TeamsActivityHandler,
@@ -10,6 +15,7 @@ import {
 } from 'botbuilder';
 import { Dialog, DialogState } from 'botbuilder-dialogs';
 import { MainDialog } from '../dialogs/mainDialog';
+
 import WelcomeCard from '../resources/welcome.json';
 
 export class SimonBot extends TeamsActivityHandler {
@@ -47,7 +53,7 @@ export class SimonBot extends TeamsActivityHandler {
       
       // If result comes from an Adaptive Card
       if (context.activity.text === undefined && context.activity.value ) {
-        context.activity.text = JSON.stringify(context.activity.value);
+        context.activity.text = JSON.stringify(context.activity.value);
       }
 
       // Run the Dialog with the new message Activity.
@@ -67,11 +73,17 @@ export class SimonBot extends TeamsActivityHandler {
     });
 
     this.onMembersAdded(async (context, next) => {
+      const welcomeCard: Attachment = CardFactory.adaptiveCard(WelcomeCard);
       const membersAdded = context.activity.membersAdded;
-      const welcomeCard = CardFactory.adaptiveCard(WelcomeCard);
       for (const member of membersAdded) {
         if (member.id !== context.activity.recipient.id) {
-          await context.sendActivity({ attachments: [welcomeCard] });
+          // If we are in Microsoft Teams
+          if (context.activity.channelId === 'msteams') {
+            // Send a message with an @Mention
+            await this._messageWithMention(context, member, welcomeCard);
+          } else {
+            await context.sendActivity({ attachments: [welcomeCard] });
+          }
         }
       }
       // By calling next() you ensure that the next BotHandler is run.
@@ -102,6 +114,25 @@ export class SimonBot extends TeamsActivityHandler {
 
   protected async handleTeamsSigninVerifyState(context: TurnContext, query: SigninStateVerificationQuery): Promise<void> {
     await (this.dialog as MainDialog).run(context, this.dialogState);
+  }
+
+  private async _messageWithMention(context: TurnContext, member: ChannelAccount, card: Attachment): Promise<void> {
+    // Create mention object
+    const mention: Mention = {
+        mentioned: member,
+        text: `<at>${member.name}</at>`,
+        type: 'mention'
+    };
+
+    // Construct message to send
+    const message: Partial<Activity> = {
+        attachments: [card],  
+        entities: [mention],
+        text: mention.text,
+        type: ActivityTypes.Message
+    };
+
+    await context.sendActivity(message);
   }
 
 }

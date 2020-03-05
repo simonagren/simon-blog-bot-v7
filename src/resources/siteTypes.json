@@ -21,8 +21,7 @@
                     "type": "Action.Submit",
                     "title": "Select",
                     "data": {
-                        "messageText": "Collaboration",
-                        "isFromAdaptiveCard": true
+                        "siteType": "Collaboration"
                     }
                 }
             ],
@@ -51,8 +50,7 @@
                     "type": "Action.Submit",
                     "title": "Select",
                     "data": {
-                        "messageText": "Communication",
-                        "isFromAdaptiveCard": true
+                        "siteType": "Communication"
                     }
                 }
             ],
@@ -81,8 +79,7 @@
                     "type": "Action.Submit",
                     "title": "Select",
                     "data": {
-                        "messageText": "Project",
-                        "isFromAdaptiveCard": true
+                        "siteType": "Project"
                     }
                 }
             ],

@@ -1,6 +1,5 @@
 import { Attachment, CardFactory } from 'botbuilder';
 import {
-  ComponentDialog,
   DialogTurnResult,
   OAuthPrompt,
   PromptValidatorContext,
@@ -10,12 +9,13 @@ import {
 } from 'botbuilder-dialogs';
 import { GraphHelper } from '../helpers/graphHelper';
 import GenericCard from '../resources/generic.json';
+import { HelperDialog } from './helperDialog';
 
 const TEXT_PROMPT = 'textPrompt';
 const WATERFALL_DIALOG = 'waterfallDialog';
 const OAUTH_PROMPT = 'OAuthPrompt';
 
-export class AliasResolverDialog extends ComponentDialog {
+export class AliasResolverDialog extends HelperDialog {
   private static tokenResponse: any;
   
   private static async aliasPromptValidator(promptContext: PromptValidatorContext<string>): Promise<boolean> {
@@ -23,8 +23,14 @@ export class AliasResolverDialog extends ComponentDialog {
       
       const alias: string = promptContext.recognized.value;
       
-      if (await GraphHelper.aliasExistsPnP(alias, AliasResolverDialog.tokenResponse))  {
-        promptContext.context.sendActivity('Alias already exist.');
+      if (await GraphHelper.aliasExists(AliasResolverDialog.tokenResponse, alias))  {
+        
+        const aliasExistText = 'Alias already exist';
+        const aliasExistCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
+          JSON.stringify(GenericCard).replace('$Placeholder', aliasExistText)));
+    
+        await promptContext.context.sendActivity({ attachments: [aliasExistCard] });
+        
         return false;
       }
 
@@ -36,7 +42,7 @@ export class AliasResolverDialog extends ComponentDialog {
   }
 
   constructor(id: string) {
-    super(id || 'ownerResolverDialog');
+    super(id || 'aliasResolverDialog', process.env.connectionName);
     
     this
         .addDialog(new TextPrompt(TEXT_PROMPT, AliasResolverDialog.aliasPromptValidator.bind(this)))
@@ -77,11 +83,7 @@ export class AliasResolverDialog extends ComponentDialog {
         const aliasCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
           JSON.stringify(GenericCard).replace('$Placeholder', promptMsg)));
   
-        await stepContext.context.sendActivity({ attachments: [aliasCard] });
-        return await stepContext.prompt(TEXT_PROMPT,
-          {
-              prompt: ''
-          });
+        return await stepContext.prompt(TEXT_PROMPT, {prompt: { attachments: [aliasCard] }});
       } else {
         return await stepContext.next(siteDetails.alias);
       }
