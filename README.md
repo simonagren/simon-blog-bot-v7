@@ -1,9 +1,9 @@
-# simon-blog-bot-v4
+# simon-blog-bot-v7
 
 Develop a Bot step by step, introducing more concepts as we go
 
-This is the Bot that is used in the Adaptive card Blog post #6.
-[URL](https://simonagren.github.io/bot-framework-series-6)
+This is the Bot that is used in the Adaptive card Blog post #7.
+[URL](https://simonagren.github.io/azurebot-nodejs-part7)
 
 
 ## Prerequisites
