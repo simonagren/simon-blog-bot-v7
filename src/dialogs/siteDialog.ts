@@ -73,7 +73,7 @@ export class SiteDialog extends HelperDialog {
         if (!siteDetails.title) {
             const promptText = `Provide a title for your ${siteDetails.siteType} site`;
             const titleCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
-                JSON.stringify(GenericCard).replace('$Placeholder', promptText)));
+                JSON.stringify(GenericCard).replace('@{placeholder}', promptText)));
 
             return await stepContext.prompt(TEXT_PROMPT, { prompt: { attachments: [titleCard] }});    
         } else {
@@ -92,7 +92,7 @@ export class SiteDialog extends HelperDialog {
         if (!siteDetails.description) {
             const promptText = `Provide a description for your ${siteDetails.siteType} site`;
             const descCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
-                JSON.stringify(GenericCard).replace('$Placeholder', promptText)));
+                JSON.stringify(GenericCard).replace('@{placeholder}', promptText)));
 
             return await stepContext.prompt(TEXT_PROMPT, { prompt: { attachments: [descCard] }});    
         } else {
@@ -153,11 +153,11 @@ export class SiteDialog extends HelperDialog {
         
         const summaryCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
             JSON.stringify(SummaryCard)
-                .replace('$Title', siteDetails.title)
-                .replace('$Desc', siteDetails.description)
-                .replace('$Owner', siteDetails.owner)
-                .replace('$Type', siteDetails.siteType)
-                .replace('$Alias', siteDetails.alias ? siteDetails.alias : '' )
+                .replace('@{title}', siteDetails.title)
+                .replace('@{description}', siteDetails.description)
+                .replace('@{owner}', siteDetails.owner)
+                .replace('@{siteType}', siteDetails.siteType)
+                .replace('@{alias}', siteDetails.alias ? siteDetails.alias : '' )
                 ));
 
         // Offer a YES/NO prompt.

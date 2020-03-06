@@ -25,18 +25,18 @@ export class OwnerResolverDialog extends HelperDialog {
       if (!OwnerResolverDialog.validateEmail(owner)) {
         const badEmailText = 'Malformatted email adress';
         const badEmailCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
-          JSON.stringify(GenericCard).replace('$Placeholder', badEmailText)));
+          JSON.stringify(GenericCard).replace('@{placeholder}', badEmailText)));
     
-        await promptContext.context.sendActivity({ attachments: [badEmailCard] });    
+        await promptContext.context.sendActivity({attachments: [badEmailCard]});    
         return false;
       }
       
       if (!await GraphHelper.userExists(OwnerResolverDialog.tokenResponse, owner))  {
         const notExistText = 'User doesn\'t exist.';
         const notExistCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
-          JSON.stringify(GenericCard).replace('$Placeholder', notExistText)));
+          JSON.stringify(GenericCard).replace('@{placeholder}', notExistText)));
 
-        await promptContext.context.sendActivity({ attachments: [notExistCard] });    
+        await promptContext.context.sendActivity({attachments: [notExistCard]});    
         return false;
       }
 
@@ -91,12 +91,9 @@ export class OwnerResolverDialog extends HelperDialog {
       if (!siteDetails.owner) {
 
         const ownerCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
-          JSON.stringify(GenericCard).replace('$Placeholder', promptMsg)));
+          JSON.stringify(GenericCard).replace('@{placeholder}', promptMsg)));
   
-        return await stepContext.prompt(TEXT_PROMPT,
-          {
-              prompt: { attachments: [ownerCard] }
-          });
+        return await stepContext.prompt(TEXT_PROMPT, {prompt: {attachments: [ownerCard]}});
       } else {
         return await stepContext.next(siteDetails.owner);
       }

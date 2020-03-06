@@ -23,7 +23,7 @@
                     "items": [
                         {
                             "type": "TextBlock",
-                            "text": "$Placeholder",
+                            "text": "@{placeholder}",
                             "spacing": "None"
                         }
                     ],

@@ -27,7 +27,7 @@ export class AliasResolverDialog extends HelperDialog {
         
         const aliasExistText = 'Alias already exist';
         const aliasExistCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
-          JSON.stringify(GenericCard).replace('$Placeholder', aliasExistText)));
+          JSON.stringify(GenericCard).replace('@{placeholder}', aliasExistText)));
     
         await promptContext.context.sendActivity({ attachments: [aliasExistCard] });
         
@@ -81,7 +81,7 @@ export class AliasResolverDialog extends HelperDialog {
       if (!siteDetails.alias) {
 
         const aliasCard: Attachment = CardFactory.adaptiveCard(JSON.parse(
-          JSON.stringify(GenericCard).replace('$Placeholder', promptMsg)));
+          JSON.stringify(GenericCard).replace('@{placeholder}', promptMsg)));
   
         return await stepContext.prompt(TEXT_PROMPT, {prompt: { attachments: [aliasCard] }});
       } else {

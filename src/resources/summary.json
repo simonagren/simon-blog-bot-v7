@@ -82,35 +82,35 @@
                     "items": [
                         {
                             "type": "TextBlock",
-                            "text": "$Title",
+                            "text": "@{title}",
                             "horizontalAlignment": "Left",
                             "spacing": "Small",
                             "wrap": true
                         },
                         {
                             "type": "TextBlock",
-                            "text": "$Desc",
+                            "text": "@{description}",
                             "horizontalAlignment": "Left",
                             "spacing": "Small",
                             "wrap": true
                         },
                         {
                             "type": "TextBlock",
-                            "text": "$Owner",
+                            "text": "@{owner}",
                             "horizontalAlignment": "Left",
                             "spacing": "Small",
                             "wrap": true
                         },
                         {
                             "type": "TextBlock",
-                            "text": "$Type",
+                            "text": "@{siteType}",
                             "horizontalAlignment": "Left",
                             "spacing": "Small",
                             "wrap": true
                         },
                         {
                             "type": "TextBlock",
-                            "text": "$Alias",
+                            "text": "@{alias}",
                             "horizontalAlignment": "Left",
                             "spacing": "Small",
                             "wrap": true

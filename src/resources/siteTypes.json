@@ -27,7 +27,7 @@
             ],
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
             "version": "1.0",
-            "speak": "<s>Your  meeting about \"Adaptive Card design session\"<break strength='weak'/> is starting at 12:30pm</s><s>Do you want to snooze <break strength='weak'/> or do you want to send a late notification to the attendees?</s>"
+            "speak": ""
         },
         {
             "type": "AdaptiveCard",
@@ -40,7 +40,7 @@
                 },
                 {
                     "type": "TextBlock",
-                    "text": "Communication sites are focused on broadcasting or communicating a message to a wide audience. In a team site, most users contribute content",
+                    "text": "Communication sites are focused on broadcasting or communicating.",
                     "isSubtle": true,
                     "wrap": true
                 }
@@ -85,7 +85,7 @@
             ],
             "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
             "version": "1.0",
-            "speak": "<s>Your  meeting about \"Adaptive Card design session\"<break strength='weak'/> is starting at 12:30pm</s><s>Do you want to snooze <break strength='weak'/> or do you want to send a late notification to the attendees?</s>"
+            "speak": ""
         }
     ]
-}
+} 
